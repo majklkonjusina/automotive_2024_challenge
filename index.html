@@ -81,8 +81,10 @@
     <script>
         let chapters = [];
         let totalTimeElapsed = 0;
+        let totalTimerInterval;
         const chaptersContainer = document.getElementById('chapters');
-
+        const timerDisplay = document.getElementById('timer');
+    
         function addChapter() {
             const div = document.createElement('div');
             div.innerHTML = `<input type="text" placeholder="Chapter Name" onkeydown="if(event.key==='Enter')enterPressed(this)">
@@ -90,7 +92,7 @@
             chaptersContainer.appendChild(div);
             div.firstChild.focus(); // Focus on the new chapter name input
         }
-
+    
         function startTimer() {
             document.getElementById('controls').remove(); // Remove all inputs and buttons
             chapters = Array.from(chaptersContainer.querySelectorAll('div')).map(div => {
@@ -102,15 +104,22 @@
                 document.body.appendChild(bar);
                 return { name, duration, bar };
             });
-            runTimer(0);
-            setInterval(() => {
-                totalTimeElapsed++;
-                timerDisplay.textContent = `Total Time Elapsed: ${formatTime(totalTimeElapsed)}`;
-            }, 1000);
+            if (!totalTimerInterval) { // Check if the timer isn't already running
+                totalTimerInterval = setInterval(() => {
+                    totalTimeElapsed++;
+                    timerDisplay.textContent = `Total Time Elapsed: ${formatTime(totalTimeElapsed)}`;
+                }, 1000);
+            }
+            if (chapters.length > 0) {
+                runTimer(0);
+            }
         }
-
+    
         function runTimer(index) {
-            if (index >= chapters.length) return;
+            if (index >= chapters.length) {
+                clearInterval(totalTimerInterval); // Optionally stop the timer when all chapters are done
+                return;
+            }
             const chapter = chapters[index];
             let remainingTime = chapter.duration;
             let interval = setInterval(() => {
@@ -125,13 +134,13 @@
                 }
             }, 1000);
         }
-
+    
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
             return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
         }
-
+    
         function enterPressed(inputElement) {
             const nextInput = inputElement.parentNode.querySelector('input[type=number]');
             if (nextInput) {
@@ -139,5 +148,6 @@
             }
         }
     </script>
+
 </body>
 </html>
