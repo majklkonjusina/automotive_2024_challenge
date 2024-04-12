@@ -21,6 +21,7 @@
         }
         .chapter-entry {
             display: flex;
+            flex-direction: row; /* Default to row, but will change to column on smaller screens */
             justify-content: space-between;
             background-color: #fff;
             border: 2px solid #007BFF;
@@ -29,6 +30,7 @@
             margin-bottom: 5px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+            width: 100%; /* Ensure it doesn't overflow */
         }
         .chapter-entry:focus-within {
             border-color: #0056b3;
@@ -81,6 +83,20 @@
             margin-bottom: 20px;
             color: #333;
             visibility: hidden; /* Initially hidden */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .chapter-entry {
+                flex-direction: column; /* Stack inputs vertically on narrow screens */
+            }
+            input, button {
+                width: 100%; /* Make sure all elements do not exceed the device width */
+                box-sizing: border-box; /* Include padding and border in the element's total width */
+            }
         }
     </style>
 </head>
