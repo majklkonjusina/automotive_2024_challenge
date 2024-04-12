@@ -3,23 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Presentation Timer</title>
+    <title>Responsive Presentation Timer</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f4f4f9;
             margin: 0;
-            padding: 40px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        #controls {
+        #infoText {
+            font-size: 16px;
+            text-align: center;
             margin-bottom: 20px;
+        }
+        .chapter-entry {
+            display: flex;
+            justify-content: space-between;
+            background-color: #fff;
+            border: 2px solid #007BFF;
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .chapter-entry:focus-within {
+            border-color: #0056b3;
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
         }
         input, button {
             padding: 10px;
-            margin-right: 5px;
+            margin: 5px;
             border: none;
             border-radius: 5px;
             font-size: 16px;
@@ -63,13 +80,15 @@
             font-size: 20px;
             margin-bottom: 20px;
             color: #333;
+            visibility: hidden; /* Initially hidden */
         }
     </style>
 </head>
 <body>
+    <div id="infoText">Enter each chapter's name and duration, then start the timer to begin your presentation countdown.</div>
     <div id="controls">
         <div id="chapters">
-            <div>
+            <div class="chapter-entry">
                 <input type="text" placeholder="Chapter Name" autofocus onkeydown="if(event.key==='Enter')enterPressed(this)">
                 <input type="number" placeholder="Duration (minutes)" min="1" onkeydown="if(event.key==='Enter')addChapter()">
             </div>
@@ -79,74 +98,72 @@
     </div>
     <div id="timer">Total Time Elapsed: 0:00</div>
     <script>
-    let chapters = [];
-    let totalTimeElapsed = 0;
-    let totalElapsedTimeInterval = null; // Declare this at the top for scope visibility
-    const chaptersContainer = document.getElementById('chapters');
-    const timerDisplay = document.getElementById('timer');
+        let chapters = [];
+        let totalTimeElapsed = 0;
+        let totalElapsedTimeInterval = null;
+        const chaptersContainer = document.getElementById('chapters');
+        const timerDisplay = document.getElementById('timer');
 
-    function addChapter() {
-        const div = document.createElement('div');
-        div.innerHTML = `<input type="text" placeholder="Chapter Name" onkeydown="if(event.key==='Enter')enterPressed(this)">
-                         <input type="number" placeholder="Duration (minutes)" min="1" onkeydown="if(event.key==='Enter')addChapter()">`;
-        chaptersContainer.appendChild(div);
-        div.firstChild.focus(); // Focus on the new chapter name input
-    }
+        function addChapter() {
+            const div = document.createElement('div');
+            div.className = 'chapter-entry';
+            div.innerHTML = `<input type="text" placeholder="Chapter Name" onkeydown="if(event.key==='Enter')enterPressed(this)">
+                             <input type="number" placeholder="Duration (minutes)" min="1" onkeydown="if(event.key==='Enter')addChapter()">`;
+            chaptersContainer.appendChild(div);
+            div.firstChild.focus();
+        }
 
-    function startTimer() {
-        document.getElementById('controls').remove(); // Remove all inputs and buttons
-        chapters = Array.from(chaptersContainer.querySelectorAll('div')).map(div => {
-            const name = div.querySelector('input[type=text]').value;
-            const duration = parseInt(div.querySelector('input[type=number]').value) * 60; // convert minutes to seconds
-            const bar = document.createElement('div');
-            bar.className = 'bar';
-            bar.innerHTML = `<div class="bar-text">${name} - ${formatTime(duration)}</div><div class="bar-progress"></div>`;
-            document.body.appendChild(bar);
-            return { name, duration, bar };
-        });
-        runTimer(0);
-        if (totalElapsedTimeInterval === null) {
+        function startTimer() {
+            document.getElementById('controls').remove(); // Remove all inputs and buttons
+            timerDisplay.style.visibility = 'visible'; // Show the timer
+            chapters = Array.from(chaptersContainer.querySelectorAll('.chapter-entry')).map(div => {
+                const name = div.querySelector('input[type=text]').value;
+                const duration = parseInt(div.querySelector('input[type=number]').value) * 60;
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.innerHTML = `<div class="bar-text">${name} - ${formatTime(duration)}</div><div class="bar-progress"></div>`;
+                document.body.appendChild(bar);
+                return { name, duration, bar };
+            });
+            runTimer(0);
             totalElapsedTimeInterval = setInterval(() => {
                 totalTimeElapsed++;
                 timerDisplay.textContent = `Total Time Elapsed: ${formatTime(totalTimeElapsed)}`;
             }, 1000);
         }
-    }
 
-    function runTimer(index) {
-        if (index >= chapters.length) {
-            clearInterval(totalElapsedTimeInterval); // Optionally clear the interval when all chapters are done
-            return;
-        }
-        const chapter = chapters[index];
-        let remainingTime = chapter.duration;
-        let interval = setInterval(() => {
-            remainingTime--;
-            const progress = chapter.bar.querySelector('.bar-progress');
-            const text = chapter.bar.querySelector('.bar-text');
-            progress.style.width = `${(1 - remainingTime / chapter.duration) * 100}%`;
-            text.textContent = `${chapter.name} - ${formatTime(remainingTime)}`;
-            if (remainingTime <= 0) {
-                clearInterval(interval);
-                runTimer(index + 1);
+        function runTimer(index) {
+            if (index >= chapters.length) {
+                clearInterval(totalElapsedTimeInterval);
+                return;
             }
-        }, 1000);
-    }
-
-    function formatTime(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-    }
-
-    function enterPressed(inputElement) {
-        const nextInput = inputElement.parentNode.querySelector('input[type=number]');
-        if (nextInput) {
-            nextInput.focus();
+            const chapter = chapters[index];
+            let remainingTime = chapter.duration;
+            let interval = setInterval(() => {
+                remainingTime--;
+                const progress = chapter.bar.querySelector('.bar-progress');
+                const text = chapter.bar.querySelector('.bar-text');
+                progress.style.width = `${(1 - remainingTime / chapter.duration) * 100}%`;
+                text.textContent = `${chapter.name} - ${formatTime(remainingTime)}`;
+                if (remainingTime <= 0) {
+                    clearInterval(interval);
+                    runTimer(index + 1);
+                }
+            }, 1000);
         }
-    }
-</script>
 
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        }
 
+        function enterPressed(inputElement) {
+            const nextInput = inputElement.parentNode.querySelector('input[type=number]');
+            if (nextInput) {
+                nextInput.focus();
+            }
+        }
+    </script>
 </body>
 </html>
