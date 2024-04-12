@@ -104,15 +104,16 @@
     <div id="infoText">Enter each chapter's name and duration, then start the timer to begin your presentation countdown.</div>
     <div id="controls">
         <div id="chapters">
-            <div class="chapter-entry">
-                <input type="text" placeholder="Chapter Name" autofocus onkeydown="if(event.key==='Enter')enterPressed(this)">
-                <input type="number" placeholder="Duration (minutes)" min="1" onkeydown="if(event.key==='Enter')addChapter()">
-            </div>
+			<div class="chapter-entry">
+				<input type="text" placeholder="Chapter Name" autofocus onkeydown="if(event.key==='Enter')enterPressed(this)">
+				<input type="text" placeholder="Minutes (e.g., 1.5 or 00:30)" onkeydown="if(event.key==='Enter')addChapter()">
+			</div>
         </div>
         <button onclick="addChapter()">Add Chapter</button>
         <button onclick="startTimer()">Start</button>
     </div>
     <div id="timer">Total Time Elapsed: 0:00</div>
+	
     <script>
         let chapters = [];
         let totalTimeElapsed = 0;
@@ -124,29 +125,57 @@
             const div = document.createElement('div');
             div.className = 'chapter-entry';
             div.innerHTML = `<input type="text" placeholder="Chapter Name" onkeydown="if(event.key==='Enter')enterPressed(this)">
-                             <input type="number" placeholder="Duration (minutes)" min="1" onkeydown="if(event.key==='Enter')addChapter()">`;
+                             <input type="text" placeholder="Minutes (e.g., 1.5 or 00:30)" min="1" onkeydown="if(event.key==='Enter')addChapter()">`;
             chaptersContainer.appendChild(div);
             div.firstChild.focus();
         }
 
-        function startTimer() {
-            document.getElementById('controls').remove(); // Remove all inputs and buttons
-            timerDisplay.style.visibility = 'visible'; // Show the timer
-            chapters = Array.from(chaptersContainer.querySelectorAll('.chapter-entry')).map(div => {
-                const name = div.querySelector('input[type=text]').value;
-                const duration = parseInt(div.querySelector('input[type=number]').value) * 60;
-                const bar = document.createElement('div');
-                bar.className = 'bar';
-                bar.innerHTML = `<div class="bar-text">${name} - ${formatTime(duration)}</div><div class="bar-progress"></div>`;
-                document.body.appendChild(bar);
-                return { name, duration, bar };
-            });
-            runTimer(0);
-            totalElapsedTimeInterval = setInterval(() => {
-                totalTimeElapsed++;
-                timerDisplay.textContent = `Total Time Elapsed: ${formatTime(totalTimeElapsed)}`;
-            }, 1000);
-        }
+		function parseDuration(input) {
+			input = input.trim(); // Trim whitespace
+			if (input.includes(':')) {
+				const parts = input.split(':');
+				const minutes = parseInt(parts[0], 10);
+				const seconds = parseInt(parts[1], 10);
+				return (minutes * 60) + seconds;
+			} else {
+				input = input.replace(',', '.'); // Replace comma with dot for decimals
+				if (input.match(/^\d+(\.\d+)?$/)) { // Match decimal or integer numbers
+					const minutes = parseFloat(input);
+					return Math.floor(minutes * 60);
+				} else {
+					return NaN; // Return NaN for non-numeric input
+				}
+			}
+		}
+
+		function startTimer() {			
+			chapters = Array.from(chaptersContainer.querySelectorAll('.chapter-entry')).map(div => {
+				const name = div.querySelector('input[type=text]').value;
+				const durationString = div.querySelector('input[type=text] + input').value; // Get the duration input
+				const duration = parseDuration(durationString); // Use parseDuration here
+				if (isNaN(duration)) {
+					alert(`Invalid duration format: ${durationString}`);
+					return null;
+				}
+				const bar = document.createElement('div');
+				bar.className = 'bar';
+				bar.innerHTML = `<div class="bar-text">${name} - ${formatTime(duration)}</div><div class="bar-progress"></div>`;
+				document.body.appendChild(bar);
+				return { name, duration, bar };
+			}).filter(chapter => chapter !== null); // Filter out invalid entries
+			if (chapters.length > 0) {
+				runTimer(0);
+				totalElapsedTimeInterval = setInterval(() => {
+					totalTimeElapsed++;
+					timerDisplay.textContent = `Total Time Elapsed: ${formatTime(totalTimeElapsed)}`;
+				}, 1000);
+				document.getElementById('controls').remove(); // Remove all inputs and buttons
+				timerDisplay.style.visibility = 'visible'; // Show the timer
+			} else {
+				timerDisplay.style.visibility = 'hidden'; // Hide the timer if no valid chapters
+			}
+		}
+
 
         function runTimer(index) {
             if (index >= chapters.length) {
